@@ -6,9 +6,11 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.Semaphore;
 
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -17,9 +19,11 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import connection.DbConnect;
+import cpu.Processor;
+import datamodel.ETL;
 import datamodel.Field;
 import datamodel.Table;
-//import datamodel.TableMetadata;
+import datamodel.TableMetadata;
 
 public class SelectTableDialog extends JDialog {
 	private static final long serialVersionUID = 835342364814963978L;
@@ -66,10 +70,16 @@ public class SelectTableDialog extends JDialog {
         selectedListModel = (DefaultListModel<Table>)selectedList.getModel();
         
         
-        List<Table> listOfTables = parentFrame.getETL().getAllTables().getTables();
+        Set<Table> listOfTables = ETL.getAllTables().getTables();
+        Set<Table> selectedTables = ETL.getRelationalTables();
+        listOfTables.removeAll(selectedTables);
         for(Table table : listOfTables)
         {
         	selectListModel.addElement(table);
+        }
+        for(Table table : selectedTables)
+        {
+        	selectedListModel.addElement(table);
         }
         
         addButton.setIcon(new javax.swing.ImageIcon(getClass().getResource("/icon/db_arrow_right.png")));
@@ -91,31 +101,57 @@ public class SelectTableDialog extends JDialog {
         				{
         					Table[] selectedTableElements = new Table[selectedListModel.getSize()];
         					selectedListModel.copyInto(selectedTableElements);
-        					List<Table> selectedTables = new ArrayList<>();
+        					Semaphore cores = new Semaphore(Processor.getNumCores());
+        					Set<Table> selectedTables = new TreeSet<>();
         					for(Table table : selectedTableElements)
         					{
-        						selectedTables.add(table);//selectedTables.add(new TableMetadata().getMetadata(table));
+        						new TableMetadata(table, cores);
+        						selectedTables.add(table);
         						try
         						{
         							DatabaseMetaData dbmeta = connection.getMetaData();
         							ResultSet resultset = dbmeta.getColumns(connection.getCatalog(), connection.getSchema(),
         									table.getName(), null);
+        							ResultSet primaryKeyInfo = dbmeta.getPrimaryKeys(connection.getCatalog(), connection.getSchema(),
+        									table.getName());
+        							ResultSet uniqueIndexInfo = dbmeta.getIndexInfo(connection.getCatalog(), connection.getSchema(),
+        									table.getName(), true, true);
+        							ResultSet indexInfo = dbmeta.getIndexInfo(connection.getCatalog(), connection.getSchema(),
+        									table.getName(), false, true);
+        							table.setPrimaryKeyInfo(primaryKeyInfo);
+        							table.setUniqueIndexInfo(uniqueIndexInfo);
+        							table.setIndexInfo(indexInfo);
+        							
         							while(resultset.next())
         							{
         								Field field = new Field(table.getDatabase(), table, resultset.getString(4),
         										resultset.getString(6),resultset.getInt(7),resultset.getInt(9),
-        										resultset.getString(18),resultset.getString(23));
+        										resultset.getString(18),resultset.getString(23),resultset.getString(12));
         								table.addField(field);
         							}
+        							resultset.close();
         						}
         						catch(SQLException e)
         						{
         							JOptionPane.showMessageDialog(null, e.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE,
         									new ImageIcon(getClass().getResource("/icon/db_error.gif")));
+        							e.printStackTrace();
         						}
         					}
-        					parentFrame.getETL().setRDBMS(selectedTables);
+        					try
+    						{
+    							connection.close();
+    						}
+    						catch(SQLException e)
+    						{
+    							JOptionPane.showMessageDialog(null, e.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE,
+    									new ImageIcon(getClass().getResource("/icon/db_error.gif")));
+    							e.printStackTrace();
+    						}
+        					ETL.setRDBMS(selectedTables);
         					parentFrame.getJMenuBar().getMenu(1).getItem(1).setEnabled(true);
+        					parentFrame.getJMenuBar().getMenu(2).getItem(0).setEnabled(true);
+        					AppMainFrame.tableMappingPanel.renderModel();
         					setVisible(false);
         				}
         			}

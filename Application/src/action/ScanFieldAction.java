@@ -12,17 +12,14 @@ import javax.swing.KeyStroke;
 import frame.AppMainFrame;
 import frame.SelectFieldDialog;
 
-public class ScanFieldAction extends AbstractAction {
-
-	/**
-	 * 
-	 */
+public class ScanFieldAction extends AbstractAction 
+{
 	private static final long serialVersionUID = -2419774357528665050L;
 	AppMainFrame parentFrame = null;
 	
 	public ScanFieldAction(AppMainFrame frame)
 	{
-		putValue(Action.NAME,"Fields");
+		putValue(Action.NAME,"Subset Relational Fields");
 		putValue(Action.SMALL_ICON,new ImageIcon(getClass().getResource("/icon/fields.png")));
 		putValue(Action.SHORT_DESCRIPTION,"Add RDBMS Fields");
 		putValue(Action.MNEMONIC_KEY,KeyEvent.VK_F);

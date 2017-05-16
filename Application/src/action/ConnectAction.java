@@ -81,7 +81,7 @@ public class ConnectAction extends AbstractAction {
 				JOptionPane.showMessageDialog(parentFrame, "There was an error closing the connection.", "Connection Error", JOptionPane.ERROR_MESSAGE);;
 				e1.printStackTrace();
 			}
-			DbConnect.setConnection(null);
+			DbConnect.closeDataSource();
 			parentFrame.getJMenuBar().getMenu(0).getItem(0).setEnabled(true);
 			parentFrame.getJMenuBar().getMenu(0).getItem(1).setEnabled(false);
 			parentFrame.getJMenuBar().getMenu(1).getItem(0).setEnabled(false);

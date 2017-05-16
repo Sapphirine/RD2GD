@@ -18,7 +18,7 @@ public class ScanTableAction extends AbstractAction {
 	
 	public ScanTableAction(AppMainFrame frame)
 	{
-		putValue(Action.NAME,"Tables");
+		putValue(Action.NAME,"Add Relational Tables");
 		putValue(Action.SMALL_ICON,new ImageIcon(getClass().getResource("/icon/tables.gif")));
 		putValue(Action.SHORT_DESCRIPTION,"Select RDBMS Tables");
 		putValue(Action.MNEMONIC_KEY,KeyEvent.VK_T);

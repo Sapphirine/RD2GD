@@ -11,44 +11,45 @@ import javax.swing.JOptionPane;
 
 import connection.DbConnect;
 
-public class TableMetadata extends Thread
-{
-	
-	Table table;
+public class FieldMetadata extends Thread{
+	Field field;
 	Semaphore cores;
 	
-	public TableMetadata(Table table, Semaphore cores)
+	public FieldMetadata(Field field, Semaphore cores)
 	{
-		this.table = table;
+		this.field = field;
 		this.cores = cores;
-		setName(table.toString());
+		setName(field.toString());
 		this.start();
 	}
 	
 	@Override
 	public void run()
 	{
-		System.out.println("Processing table:" + getName());
+		System.out.println("Processing field:" + getName());
 		cores.acquireUninterruptibly();
 		getMetadata();
 		cores.release();
-		System.out.println("Finished processing table:" + getName());
+		System.out.println("Finished processing filed:" + getName());
 	}
-
 	public void getMetadata()
 	{
-		String query = "SELECT count(*) FROM " + table.toString();
-		
+		String query = "SELECT " + field.getName() + ", count(*) freq FROM " + field.getTable().toString() + 
+				" group by " + field.getName();
 		try
 		(
 				Connection connection = DbConnect.getConnection();
 				Statement statement = connection.createStatement();
-				ResultSet resultset = statement.executeQuery(query);
+				ResultSet resultSet = statement.executeQuery(query);
 		)
 		{
-			if(resultset.next())
+			//System.out.println("Results for field:" + field.getName());
+			while(resultSet.next())
 			{
-				table.setRowCount(resultset.getInt(1));
+				//System.out.println(resultSet.getString(1) + ": " + resultSet.getInt(2));
+				Value value = new Value(field.getDatabase(), field.getTable(), field, resultSet.getString(1), 
+						resultSet.getInt(2));
+				field.addValue(value);
 			}
 		}
 		catch(SQLException e)
@@ -56,5 +57,6 @@ public class TableMetadata extends Thread
 			JOptionPane.showMessageDialog(null, e.getMessage(), "SQL Error", JOptionPane.ERROR_MESSAGE,
 					new ImageIcon(getClass().getResource("/icon/db_error.gif")));
 		}
+		
 	}
 }

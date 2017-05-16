@@ -5,6 +5,7 @@ import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
@@ -14,8 +15,10 @@ import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+
 import javax.swing.JButton;
 
+import datamodel.ETL;
 import datamodel.Field;
 import datamodel.Table;
 
@@ -36,12 +39,10 @@ public class SelectFieldDialog extends JDialog {
     private DefaultListModel<Field> selectedListModel;
     private JPanel selectedPanel;
     private JScrollPane selectedScrollPanel;
-    private AppMainFrame parentFrame = null;
     
     public SelectFieldDialog(JFrame owner)
     {
     	super(owner, "Add RDBMS Datamodel Fields");
-    	parentFrame = ((AppMainFrame)getParent());
     	initComponents();
     }
     
@@ -62,7 +63,7 @@ public class SelectFieldDialog extends JDialog {
         selectListModel = (DefaultListModel<Field>)selectList.getModel();
         selectedListModel = (DefaultListModel<Field>)selectedList.getModel();
         
-        List<Table> selectedTables = parentFrame.getETL().getRDBMS().getTables();
+        Set<Table> selectedTables = ETL.getRelationalTables();
         for(Table table : selectedTables)
         {
         	for(Field field : table.getFields())

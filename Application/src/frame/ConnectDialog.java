@@ -2,9 +2,11 @@ package frame;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+//import java.awt.Font;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -23,6 +25,7 @@ import gridback.GBC;
 import connection.DbConnect;
 import connection.DbType;
 import datamodel.Database;
+import datamodel.ETL;
 import datamodel.Table;
 
 /**
@@ -68,7 +71,7 @@ public class ConnectDialog extends JDialog {
 				{
 					public void actionPerformed(ActionEvent event)
 					{
-						DbConnect.setConnection(null);
+						DbConnect.closeDataSource();
 						server.setText("");
 						user.setText("");
 						password.setText("");
@@ -90,34 +93,32 @@ public class ConnectDialog extends JDialog {
 						}
 						else
 						{
-							if(DbConnect.getConnection() == null)
+							if(DbConnect.getDataSource() == null)
 							{
-								try {
-									DbConnect.connect(server.getText(),null,user.getText(),new String(password.getPassword()),
+								DbConnect.setDataSource(server.getText(),null,user.getText(),new String(password.getPassword()),
 											dbtypecombo.getItemAt(dbtypecombo.getSelectedIndex()),database.getText());
-								} catch (SQLException e) {
-									JOptionPane.showMessageDialog(null, e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE,
-											new ImageIcon(getClass().getResource("/icon/db_error.gif")));
-									e.printStackTrace();
-								}
 							}
 							parentFrame.getJMenuBar().getMenu(0).getItem(0).setEnabled(false);
 							parentFrame.getJMenuBar().getMenu(0).getItem(1).setEnabled(true);
 							parentFrame.getJMenuBar().getMenu(1).getItem(0).setEnabled(true);
 							try {
-								Database allTables = parentFrame.getETL().getAllTables();
-								DbConnect.getConnection().setCatalog(database.getText());
-								DatabaseMetaData dbMetaData = DbConnect.getConnection().getMetaData();
-								ResultSet tableMetaData = dbMetaData.getTables(DbConnect.getConnection().getCatalog(), null, null, null);
+								Database allTables = ETL.getAllTables();
+								Connection connection = DbConnect.getConnection();
+								DatabaseMetaData dbMetaData = connection.getMetaData();
+								ResultSet tableMetaData = dbMetaData.getTables(connection.getCatalog(), null, null, null);
 								while(tableMetaData.next())
 								{
 									String schemaName = tableMetaData.getString(2);
 									String tableType = tableMetaData.getString(4);
 									String tableName = tableMetaData.getString(3);
-									allTables.addTable(new Table(allTables, tableName, tableType, schemaName));
+									String tableDescription = tableMetaData.getString(5);
+									allTables.addTable(new Table(allTables, tableName, tableType, schemaName, tableDescription));
 								}
 								tableMetaData.close();
+								connection.close();
 							} catch (SQLException e) {
+								JOptionPane.showMessageDialog(null, e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE,
+										new ImageIcon(getClass().getResource("/icon/db_error.gif")));
 								e.printStackTrace();
 							}
 							setVisible(false);
@@ -138,19 +139,12 @@ public class ConnectDialog extends JDialog {
 						}
 						else
 						{
-							try {
-								DbConnect.connect(server.getText(),null,user.getText(),new String(password.getPassword()),
-										dbtypecombo.getItemAt(dbtypecombo.getSelectedIndex()),database.getText());
-								JOptionPane.showMessageDialog(null, "Successfully connected to " + database.getText() + " on " 
-										+ server.getText() 
-										, "Successful Connection", JOptionPane.ERROR_MESSAGE,
-										new ImageIcon(getClass().getResource("/icon/db_success.gif")));
-								
-							} catch (SQLException e) {
-								JOptionPane.showMessageDialog(null, e.getMessage(), "Connection Error", JOptionPane.ERROR_MESSAGE,
-										new ImageIcon(getClass().getResource("/icon/db_error.gif")));
-								e.printStackTrace();
-							}
+							DbConnect.setDataSource(server.getText(),null,user.getText(),new String(password.getPassword()),
+									dbtypecombo.getItemAt(dbtypecombo.getSelectedIndex()),database.getText());
+							JOptionPane.showMessageDialog(null, "Successfully connected to " + database.getText() + " on " 
+									+ server.getText() 
+									, "Successful Connection", JOptionPane.ERROR_MESSAGE,
+									new ImageIcon(getClass().getResource("/icon/db_success.gif")));
 						}
 					}
 				}

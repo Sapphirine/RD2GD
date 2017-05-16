@@ -1,7 +1,7 @@
 package datamodel;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class Database{
 	
@@ -10,25 +10,26 @@ public class Database{
 		RDBMS,GDBMS,ALL
 	}
 	
+	private Set<Table> tables;
+	private Type type;
+	
 	public Database(Type type)
 	{
 		this.type = type;
+		this.tables = new TreeSet<>();
 	}
-	
-	private List<Table> tables = new ArrayList<>();
-	private Type type;
 	
 	public void addTable(Table table)
 	{
 		tables.add(table);
 	}
 	
-	public void setTables(List<Table> tables)
+	public void setTables(Set<Table> tables)
 	{
 		this.tables = tables;
 	}
 	
-	public List<Table> getTables()
+	public Set<Table> getTables()
 	{
 		return tables;
 	}
